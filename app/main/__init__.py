@@ -1,4 +1,5 @@
-from flask import Flask
-from flask_bootstrap import Bootstrap
-from flask_mail import Mail
-from flask_
+from flask import Blueprint
+
+main = Blueprint('main', __name__)
+
+from . import views, errors
