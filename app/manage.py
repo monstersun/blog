@@ -7,6 +7,8 @@ from flask_mail import Mail, Message
 from flask_script import Manager,Shell
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate, MigrateCommand
+from threading import Thread
+
 '''初始化flask'''
 app = Flask(__name__)
 '''初始化bootstrap'''
@@ -25,6 +27,8 @@ app.config['MAIL_DEBUG'] = True
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:126.com@localhost/data-test'
 app.config['SQLALCHEMY_COMMIT_ON_TERADOWN'] = True
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['MAIL_SUBJECT_PREFIX'] = '[FLASKY]'
+app.config['MAIL_SENDER'] = 'FLASKY ADMIN <sxyzztx@126.com>'
 '''初始化db类'''
 db = SQLAlchemy(app)
 
@@ -60,10 +64,18 @@ class NameForm(FlaskForm):
 
 
 '''邮件函数'''
-def mail_send(name):
-    msg = Message('this is test e-mail', sender='sxyzztx@126.com', recipients=['sxyzztx@outlook.com'])
-    msg.body = 'hello,%s'%name
-    mail.send(msg)
+def send_aysc_mail(msg, app):
+    with app.app_context():
+        mail.send(msg)
+
+def mail_send(name,subject, template, **kwargs):
+    msg = Message(app.config['MAIL_SUBJECT_PREFIX'] + subject, sender=app.config['MAIL_SENDER'], recipients=['sxyzztx@outlook.com'])
+    msg.body = render_template(template + '.text', **kwargs)
+    msg.html = render_template(template + '.html', **kwargs)
+    thr = Thread(target=send_aysc_mail, args=[app, msg])
+    thr.start()
+    return thr
+
 
 '''flask管理工具'''
 manager = Manager(app)
