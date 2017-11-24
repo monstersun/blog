@@ -3,17 +3,19 @@ from flask_bootstrap import Bootstrap
 from flask_mail import Mail
 from flask_sqlalchemy import SQLAlchemy
 from flask_moment import Moment
-
+from config import config
 '''实例化扩展类'''
 bootstrap = Bootstrap()
 mail = Mail()
 db = SQLAlchemy()
-moment = Moment
+moment = Moment()
 
 '''定义工厂函数'''
 def cerate_app(config_name):
     '''初始化flaskapp'''
     app = Flask(__name__)
+    app.config.from_object(config[config_name])
+    config[config_name].init_app(app)
     '''初始化扩展对象'''
     bootstrap.init_app(app)
     mail.init_app(app)

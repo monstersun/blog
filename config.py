@@ -16,7 +16,9 @@ class Config:
     MAIL_DEBUG = True
     MAIL_TLS_USE = True
 
-
+    @staticmethod
+    def init_app(app):
+        pass
 class DevConfig(Config):
     SQLALCHEMY_DATABASE_URI = 'mysql://root:126.com@localhost/database-dev'
 
