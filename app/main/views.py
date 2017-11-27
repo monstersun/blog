@@ -1,6 +1,6 @@
 
 from . import main
-from .form import LoginForm
+from .form import NameForm
 from ..emails import send_mail
 from ..model import User
 from .. import db
@@ -11,9 +11,9 @@ from flask import session, redirect, url_for, render_template, current_app
 
 @main.route('/', methods=['GET', 'POST'])
 def index():
-    form = LoginForm()
+    form = NameForm()
     if form.validate_on_submit():
-        user = User.query.filter_by(form.name.data).first()
+        user = User.query.filter_by(username=form.name.data).first()
         if user is None:
             '''Known用来标识用户是否为已注册用户'''
             session['Known'] = False

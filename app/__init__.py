@@ -11,7 +11,7 @@ db = SQLAlchemy()
 moment = Moment()
 
 '''定义工厂函数'''
-def cerate_app(config_name):
+def create_app(config_name):
     '''初始化flaskapp'''
     app = Flask(__name__)
     app.config.from_object(config[config_name])
@@ -26,4 +26,7 @@ def cerate_app(config_name):
     from .main import main as main_blueprint
     app.register_blueprint(main_blueprint)
 
+    '''增加蓝本'''
+    from .auth import auth as auth_blueprint
+    app.register_blueprint(auth_blueprint, url_prefix = '/auth')
     return app
