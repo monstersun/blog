@@ -1,0 +1,7 @@
+<p>尊敬的{{ user.username }}</p>
+<p>欢迎来到我的个人博客</p>
+<p>为了确认您的账户请点击下面的连接</p>
+<p>{{ url_for('auth.confirm', token=token, _external=True) }}</p>
+<p>  真诚地感谢您，</p>
+<p>  sxy</p>
+<p>  勿回！</p>

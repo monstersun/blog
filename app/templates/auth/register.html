@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% from 'bootstrap/wtf.html' as wtf %}
+
+{% block title %}
+    个人用户注册
+{% endblock %}
+
+{% block content %}
+    {% wtf.quick_form(form) %}
+{% endblock %}
