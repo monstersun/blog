@@ -25,9 +25,15 @@ class RegisterForm(FlaskForm):
 
     '''验证邮箱唯一性，注意方法名必须为validate_+字段名'''
     def validate_email(self, field):
-        if User.query.filter_by(email = field.data):
+        if User.query.filter_by(email = field.data).first():
             raise ValidationError('邮箱已注册')
     '''验证用户名唯一性'''
     def validate_username(self, field):
-        if User.query.filter_by(username = field.data):
+        if User.query.filter_by(username = field.data).first():
             raise ValidationError('用户名已存在')
+
+
+class ChangePasswordForm(FlaskForm):
+    password = PasswordField('您的新密码：', validators=[Required(), EqualTo('password2', '新密码与确认密码不一致')])
+    password2 = PasswordField('确认密码', validators=[Required()])
+    submit = SubmitField('提交')

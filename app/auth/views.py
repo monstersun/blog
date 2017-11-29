@@ -38,7 +38,7 @@ def register():
         db.session.add(user)
         db.session.commit()
         token = user.generate_confirmation_token()
-        send_mail(user.email, 'auth/emails/confrim', user=user, token=token)
+        send_mail(user.email, 'auth/emails/confirm', user=user, token=token)
         flash('A confirm email has been sent to your emailbox')
         return redirect(url_for('main.index'))
     return render_template('auth/register.html', form=form)
@@ -54,3 +54,30 @@ def confirm(token):
     else:
         flash('确认连接已经失效')
     return redirect(url_for('main.index'))
+
+'''拦截未确认用户'''
+@auth.before_app_request
+def before_request():
+    if current_user.is_authenticated and\
+             not current_user.confirmed\
+            and request.blueprint != 'auth' \
+            and request.endpoint != 'static':
+        return redirect(url_for('auth.unconfirm'))
+
+@auth.route('/unconfirm')
+def unconfirm():
+    if current_user.is_anonymous and current_user.confirmed:
+        return redirect(url_for('main.index'))
+    return render_template('auth/unconfirm.html')
+
+
+'''再次发送确认邮件'''
+@auth.route('/confirm')
+def resend_confirm_email():
+    token = current_user.generate_confirmation_token()
+    send_mail(current_user.email, 'auth/emails/confirm', user=current_user, token=token)
+    flash('新的确认邮件已发送')
+    return redirect('main.index')
+
+'''修改密码'''
+@auth.route('/change_password')
