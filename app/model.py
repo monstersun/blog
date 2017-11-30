@@ -56,6 +56,24 @@ class User(UserMixin, db.Model):
         db.session.add(self)
         return True
 
+    '''修改密码'''
+    '''修改密码token'''
+    def generate_changepassword_token(self, expirtation=3600):
+        s = Serializer(current_app.config['SECRET_KEY'], expires_in=expirtation)
+        return s.dump({'changepassword':self.id})
+
+    def changepassword(self, token, new_password):
+        s = Serializer(current_app.config['SECRET_KEY'])
+        try:
+            data = s.loads(token)
+        except:
+            return False
+        if data != self.id:
+            return False
+        self.password = new_password
+        db.session.add(self)
+        return True
+
     def __repr__(self):
         return 'User, %r'%self.username
 

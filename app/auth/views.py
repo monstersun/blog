@@ -1,5 +1,5 @@
 from . import auth
-from .form import LoginForm, RegisterForm
+from .form import LoginForm, RegisterForm, ChangePasswordForm, PasswordChangeEmail
 from ..model import User
 from flask import render_template, redirect, url_for, request, flash
 from flask_login import login_user, login_required, logout_user, current_user
@@ -80,4 +80,11 @@ def resend_confirm_email():
     return redirect('main.index')
 
 '''修改密码'''
-@auth.route('/change_password')
+@auth.route('/PasswordChangeEmail')
+@login_required
+def change_password_email():
+    form = PasswordChangeEmail()
+    if form.validate_on_submit():
+
+
+
