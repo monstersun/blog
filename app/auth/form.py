@@ -34,10 +34,8 @@ class RegisterForm(FlaskForm):
 
 
 class ChangePasswordForm(FlaskForm):
+    old_password = PasswordField('您的旧密码', validators=[Required()])
     password = PasswordField('您的新密码：', validators=[Required(), EqualTo('password2', '新密码与确认密码不一致')])
     password2 = PasswordField('确认密码', validators=[Required()])
     submit = SubmitField('提交')
 
-class PasswordChangeEmail(FlaskForm):
-    email = StringField('您的邮箱：', validators=[Required(), Length(1,64), Email()])
-    submit = SubmitField('提交')

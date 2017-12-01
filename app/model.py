@@ -33,7 +33,7 @@ class User(UserMixin, db.Model):
     def password(self, password):
         self.password_hash = generate_password_hash(password)
 
-    def vertify(self, password):
+    def verify_password(self, password):
         return check_password_hash(self.password_hash, password)
 
     '''确认用户账户'''
@@ -57,21 +57,11 @@ class User(UserMixin, db.Model):
         return True
 
     '''修改密码'''
-    '''修改密码token'''
-    def generate_changepassword_token(self, expirtation=3600):
-        s = Serializer(current_app.config['SECRET_KEY'], expires_in=expirtation)
-        return s.dump({'changepassword':self.id})
 
-    def changepassword(self, token, new_password):
-        s = Serializer(current_app.config['SECRET_KEY'])
-        try:
-            data = s.loads(token)
-        except:
-            return False
-        if data != self.id:
-            return False
+    def change_password(self, new_password):
         self.password = new_password
         db.session.add(self)
+        db.session.commit()
         return True
 
     def __repr__(self):

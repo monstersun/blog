@@ -1,5 +1,5 @@
 from . import auth
-from .form import LoginForm, RegisterForm, ChangePasswordForm, PasswordChangeEmail
+from .form import LoginForm, RegisterForm, ChangePasswordForm
 from ..model import User
 from flask import render_template, redirect, url_for, request, flash
 from flask_login import login_user, login_required, logout_user, current_user
@@ -11,7 +11,7 @@ def login():
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(email = form.email.data).first()
-        if user is not None and user.vertify(form.password.data):
+        if user is not None and user.verify_password(form.password.data):
             login_user(user, form.remeber_me.data)
 
             '''request.args.get('next')中的next指的是原本要访问但没有权限导致登录的原网页'''
@@ -80,11 +80,17 @@ def resend_confirm_email():
     return redirect('main.index')
 
 '''修改密码'''
-@auth.route('/PasswordChangeEmail')
+@auth.route('/changePassword', methods=['GET', 'POST'])
 @login_required
-def change_password_email():
-    form = PasswordChangeEmail()
+def changePassword():
+    form = ChangePasswordForm()
     if form.validate_on_submit():
+        if current_user.verify_password(form.old_password.data):
+            current_user.change_password(form.password.data)
+            return redirect(url_for('auth.login'))
+    return render_template('auth/changePassword.html', form = form)
 
 
+
+        
 
