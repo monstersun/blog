@@ -10,7 +10,7 @@ class Config:
     MAIL_SERVER = 'smtp.126.com'
     MAIL_PORT = 25
     MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
-    MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
+    MAIL_PASSWORD = os.environ.get('MAIL_USERNAME')
     MAIL_SUBJECT_PREFIX = '[Flasky]'
     MAIL_SENDER = 'FLASKY ADMIN <sxyzztx@126.com>'
     MAIL_DEBUG = True

@@ -32,10 +32,26 @@ class RegisterForm(FlaskForm):
         if User.query.filter_by(username = field.data).first():
             raise ValidationError('用户名已存在')
 
-
+'''修改密码表单（找回密码也可用）'''
 class ChangePasswordForm(FlaskForm):
     old_password = PasswordField('您的旧密码', validators=[Required()])
     password = PasswordField('您的新密码：', validators=[Required(), EqualTo('password2', '新密码与确认密码不一致')])
     password2 = PasswordField('确认密码', validators=[Required()])
     submit = SubmitField('提交')
 
+'''找回密码邮箱表单'''
+class PasswordResetEmailForm(FlaskForm):
+    email = StringField('请输入您的邮箱', validators=[Required(), Length(1,64), Email()])
+    submit = SubmitField('提交')
+    def validate_email(self, field):
+        if User.query.filter_by(email=field.data).first() is None:
+            raise ValidationError('邮箱不存在')
+
+class PasswordResetFrom(FlaskForm):
+    email = StringField('请输入你的邮箱', validators=[Required(), Length(1,64), Email()])
+    password = PasswordField('输入您的新密码', validators=[Required(), EqualTo('password2', '密码不一致')])
+    password2 = PasswordField('确认密码', validators=[Required()])
+    submit = SubmitField('提交')
+    def validate_email(self, field):
+        if User.query.filter_by(email=field.data).first() is None:
+            raise ValidationError('邮箱不存在')

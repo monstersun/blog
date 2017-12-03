@@ -25,7 +25,7 @@
                         <li><a href="{{ url_for('auth.changePassword') }}">修改密码</a></li>
                     {% else %}
                         <li><a href="{{ url_for('auth.login') }}">登录</a></li>
-                        <li><a href="">找回密码</a></li>
+                        <li><a href="{{ url_for('auth.passwordResetEmail') }}">找回密码</a></li>
                     {% endif %}
                 </ul>
             </div>
