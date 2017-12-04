@@ -15,6 +15,7 @@ class Config:
     MAIL_SENDER = 'FLASKY ADMIN <sxyzztx@126.com>'
     MAIL_DEBUG = True
     MAIL_TLS_USE = True
+    FLASKY_ADMIN = 'sxyzztx@outlook.com'
 
     @staticmethod
     def init_app(app):
