@@ -21,13 +21,13 @@ class Config:
     def init_app(app):
         pass
 class DevConfig(Config):
-    SQLALCHEMY_DATABASE_URI = 'mysql://root:126.com@localhost/database-dev'
+    SQLALCHEMY_DATABASE_URI = 'mysql://root:123456@localhost/database-dev'
 
 class TestConfig(Config):
-    SQLALCHEMY_DATABASE_URI = 'mysql://root:126.com@localhost/database-dev'
+    SQLALCHEMY_DATABASE_URI = 'mysql://root:123456@localhost/database-dev'
 
 class ProductConfig(Config):
-    SQLALCHEMY_DATABASE_URI = 'mysql://root:126.com@localhost/database-dev'
+    SQLALCHEMY_DATABASE_URI = 'mysql://root:123456@localhost/database-dev'
 
 config = {
     'development': DevConfig,

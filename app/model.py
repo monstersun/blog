@@ -4,6 +4,7 @@ from flask_login import UserMixin, AnonymousUserMixin
 from .  import login_manager
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 from flask import current_app
+from flask_moment import datetime
 
 class Role(db.Model):
     __tablename__ = 'roles'
@@ -12,7 +13,7 @@ class Role(db.Model):
     name = db.Column(db.String(64), unique=True)
     default = db.Column(db.Boolean, default=False, index=True)
     permission = db.Column(db.Integer)
-    users = db.relationship('User', backref='roles')
+    users = db.relationship('User', backref='role')
 
     @staticmethod
     def insert_roles():
@@ -52,10 +53,15 @@ class User(UserMixin, db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(64), unique=True, index=True)
+    name = db.Column(db.String(64))
     email = db.Column(db.String(128), unique=True, index=True)
     role_id = db.Column(db.Integer, db.ForeignKey('roles.id'))
     password_hash = db.Column(db.String(128))
     confirmed = db.Column(db.Boolean, default=False)
+    location = db.Column(db.String(128))
+    about_me = db.Column(db.Text())
+    member_since = db.Column(db.DateTime(), default=datetime.utcnow)
+    last_seen = db.Column(db.DateTime(), default=datetime.utcnow)
 
     def __init__(self, **kwargs):
         super(User, self).__init__(**kwargs)
@@ -133,6 +139,13 @@ class User(UserMixin, db.Model):
         db.session.add(self)
         db.session.commit()
         return True
+
+
+    '''刷新最后登录时间'''
+    def ping(self):
+        self.last_seen = datetime.utcnow()
+        db.session.add(self)
+        db.session.commit()
 
 
     def __repr__(self):
