@@ -98,3 +98,8 @@ ENV/
 
 # mypy
 .mypy_cache/
+.idea/misc.xml
+.idea/misc.xml
+.idea/myblog.iml
+*.xml
+*.xml
