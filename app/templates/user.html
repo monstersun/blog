@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block title %}
+    用户资料管理器
+{% endblock %}
+
+{% block page_content %}
+    <div class="page-header">
+        <h1>{{ user.username }}</h1>
+        {% if user.name or user.location %}
+            <p>{% if username %}{{ user.name }}{% endif %}</p>
+            <p>{% if user.location %}来自<a href="http://map.baidu.com/?newmap=1&ie=utf-8&s=s%26wd%3D{{ user.location }}">
+                {{ user.location }}</a>{% endif %}</p>
+        {% endif %}
+        {% if current_user.is_administrator %}
+            <p><a href="mailto:{{ user.email }}">{{ user.email }}</a></p>
+        {% endif %}
+        {% if user.about_me %}
+            <p>{{ user.about_me }}</p>
+        {% endif %}
+
+        {% if user == current_user %}
+            <a href="{{ url_for('main.editprofile') }}" class="btn btn-default">修改个人资料</a>
+        {% endif %}
+        {% if current_user.is_administrator %}
+            <a href="{{ url_for('main.editadmin', id=current_user.id) }}">修改资料[管理员]</a>
+        {% endif %}
+    </div>
+{% endblock %}
