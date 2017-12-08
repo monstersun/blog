@@ -39,7 +39,7 @@ def register():
         db.session.commit()
         token = user.generate_confirmation_token()
         send_mail(user.email,'确认您的账户', 'auth/emails/confirm', user=user, token=token)
-        flash('已将一份需要您确认的邮件发送到您的邮箱，请注意查收')
+        flash('A confirm email has been sent to your emailbox')
         return redirect(url_for('main.index'))
     return render_template('auth/register.html', form=form)
 
@@ -58,12 +58,11 @@ def confirm(token):
 '''拦截未确认用户'''
 @auth.before_app_request
 def before_request():
-    if current_user.is_authenticated:
-        current_user.ping()
-        if not current_user.confirmed\
+    if current_user.is_authenticated and\
+             not current_user.confirmed\
             and request.blueprint != 'auth' \
             and request.endpoint != 'static':
-            return redirect(url_for('auth.unconfirm'))
+        return redirect(url_for('auth.unconfirm'))
 
 @auth.route('/unconfirm')
 def unconfirm():
