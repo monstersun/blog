@@ -19,26 +19,28 @@ class EditProfileForm(FlaskForm):
 
 class EditProfileAdminForm(FlaskForm):
     email = StringField('邮箱', validators=[Required(), Length(1,64), Email()])
-    username = StringField('用户名', validators=[Required(), Regexp('^[A-Z][A-Za-z_.]*$', 0, '用户名必须是字母下划线组成')])
+    username = StringField('用户名', validators=[Required(), Regexp('^[A-Za-z][A-Za-z0-9_.]*$', 0, '用户名必须是字母下划线组成')])
     confirmed = BooleanField('确认')
-    role = SelectField('选择角色', coerce=True)
+    role = SelectField('选择角色', coerce=int)
     name = StringField('真实姓名', validators=[Length(1,128)])
-    location = StringField('地址')
+    location = StringField('地址', validators=[Length(1,128)])
     about_me = StringField('关于我')
     submit = SubmitField('提交')
 
     def __init__(self, user, *args, **kwargs):
-        super(EditProfileAdminForm, self).__init__(self, *args, **kwargs)
+        super(EditProfileAdminForm, self).__init__(*args, **kwargs)
         self.user = user
         self.role.choices = [(role.id, role.name) for role in Role.query.order_by(Role.name).all()]
 
     def validate_email(self, field):
         if field.data != self.user.email and User.query.filter_by(email=field.data).first():
-            return ValidationError('邮箱已注册')
+            raise ValidationError('邮箱已注册')
 
     def validate_username(self, field):
         if field.data != self.user.username and User.query.filter_by(username=field.data).first():
-            return ValidationError('用户名已注册')
+            raise ValidationError('用户名已注册')
 
 
-
+class PostForm(FlaskForm):
+    body = TextAreaField('您的想法')
+    submit = SubmitField('提交')

@@ -22,7 +22,8 @@
             <a href="{{ url_for('main.editprofile') }}" class="btn btn-default">修改个人资料</a>
         {% endif %}
         {% if current_user.is_administrator %}
-            <a href="{{ url_for('main.editadmin', id=current_user.id) }}">修改资料[管理员]</a>
+            <a href="{{ url_for('main.editadmin', id=current_user.id) }}" class="btn btn-default">修改资料[管理员]</a>
         {% endif %}
     </div>
+    <h3>Posts by {{ user.username }}</h3>
 {% endblock %}

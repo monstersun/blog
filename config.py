@@ -9,8 +9,8 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     MAIL_SERVER = 'smtp.126.com'
     MAIL_PORT = 25
-    MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
-    MAIL_PASSWORD = os.environ.get('MAIL_USERNAME')
+    MAIL_USERNAME = 'sxyzztx@126.com'
+    MAIL_PASSWORD = 'sunaiding750'
     MAIL_SUBJECT_PREFIX = '[Flasky]'
     MAIL_SENDER = 'FLASKY ADMIN <sxyzztx@126.com>'
     MAIL_DEBUG = True
