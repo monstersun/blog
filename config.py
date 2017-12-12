@@ -9,8 +9,8 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     MAIL_SERVER = 'smtp.126.com'
     MAIL_PORT = 25
-    MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
-    MAIL_PASSWORD = os.environ.get('MAIL_USERNAME')
+    MAIL_USERNAME = 'sxyzztx@126.com'
+    MAIL_PASSWORD = 'sunaiding750'
     MAIL_SUBJECT_PREFIX = '[Flasky]'
     MAIL_SENDER = 'FLASKY ADMIN <sxyzztx@126.com>'
     MAIL_DEBUG = True
@@ -21,13 +21,13 @@ class Config:
     def init_app(app):
         pass
 class DevConfig(Config):
-    SQLALCHEMY_DATABASE_URI = 'mysql://root:126.com@localhost/database-dev'
+    SQLALCHEMY_DATABASE_URI = 'mysql://root:123456@localhost/database-dev'
 
 class TestConfig(Config):
-    SQLALCHEMY_DATABASE_URI = 'mysql://root:126.com@localhost/database-dev'
+    SQLALCHEMY_DATABASE_URI = 'mysql://root:123456@localhost/database-dev'
 
 class ProductConfig(Config):
-    SQLALCHEMY_DATABASE_URI = 'mysql://root:126.com@localhost/database-dev'
+    SQLALCHEMY_DATABASE_URI = 'mysql://root:123456@localhost/database-dev'
 
 config = {
     'development': DevConfig,

@@ -3,7 +3,9 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin, AnonymousUserMixin
 from .  import login_manager
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
-from flask import current_app
+from flask import current_app, request
+from flask_moment import datetime
+import hashlib
 
 class Role(db.Model):
     __tablename__ = 'roles'
@@ -12,7 +14,7 @@ class Role(db.Model):
     name = db.Column(db.String(64), unique=True)
     default = db.Column(db.Boolean, default=False, index=True)
     permission = db.Column(db.Integer)
-    users = db.relationship('User', backref='roles')
+    users = db.relationship('User', backref='role')
 
     @staticmethod
     def insert_roles():
@@ -39,6 +41,7 @@ class Role(db.Model):
     def __repr__(self):
         return 'Role, <%r>'%self.name
 
+'''权限'''
 class Permission:
     FOLLOW = 0x01
     COMMENT = 0X02
@@ -52,12 +55,22 @@ class User(UserMixin, db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(64), unique=True, index=True)
+    name = db.Column(db.String(64))
     email = db.Column(db.String(128), unique=True, index=True)
     role_id = db.Column(db.Integer, db.ForeignKey('roles.id'))
     password_hash = db.Column(db.String(128))
     confirmed = db.Column(db.Boolean, default=False)
+<<<<<<< HEAD
     location = db.Column(db.String(64))
     about_me = db.Column(d)
+=======
+    location = db.Column(db.String(128))
+    about_me = db.Column(db.Text())
+    member_since = db.Column(db.DateTime(), default=datetime.utcnow)
+    last_seen = db.Column(db.DateTime(), default=datetime.utcnow)
+    posts = db.relationship('Post', backref='auther', lazy='dynamic')
+    avatar_hash = db.Column(db.String(64))
+>>>>>>> 6f67c1b5d6bf22040126ac3af6c090a2a5336d28
 
     def __init__(self, **kwargs):
         super(User, self).__init__(**kwargs)
@@ -66,13 +79,14 @@ class User(UserMixin, db.Model):
                 self.role = Role.query.filter_by(permission=0xff).first()
             if self.role is None:
                 self.role = Role.query.filter_by(default=True).first()
-
+        if self.email is not None and self.avatar_hash is None:
+            self.avatar_hash = hashlib.md5(self.email.encode('utf-8')).hexdigest()
 
     '''验证用户权限'''
     def can(self, permission):
         return self.role is not None and (self.role.permission & permission) == permission
 
-    def is_Administrator(self):
+    def is_administrator(self):
         return self.can(Permission.ADMINISTER)
 
     '''密码加密hash'''
@@ -137,10 +151,27 @@ class User(UserMixin, db.Model):
         return True
 
 
+    '''刷新最后登录时间'''
+    def ping(self):
+        self.last_seen = datetime.utcnow()
+        db.session.add(self)
+        db.session.commit()
+
+    '''gravatar头像'''
+    def gravatar(self, size=100, default='identicon', ratting='g'):
+        if request.is_secure:
+            url = 'https://secure.gravatar.com/avatar'
+        else:
+            url = 'http://www.gravatar.com'
+
+        return '{url}/{hash}?s={size}&d={default}&r={ratting}'.format(url=url, hash=self.avatar_hash, size=size,
+                                                                      default=default, ratting=ratting)
+
+
     def __repr__(self):
         return 'User, %r'%self.username
 
-
+'''匿名用户'''
 class AnonymousUser(AnonymousUserMixin):
     def can(self, permission):
         return False
@@ -148,6 +179,19 @@ class AnonymousUser(AnonymousUserMixin):
         return False
 
 login_manager.anonymous_user = AnonymousUser
+
+
+'''文章'''
+class Post(db.Model):
+    __tablename__ = 'Post'
+    id = db.Column(db.Integer, primary_key=True)
+    body = db.Column(db.TEXT)
+    timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
+    auther_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+
+
+
+
 
 @login_manager.user_loader
 def load_user(user_id):
