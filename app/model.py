@@ -65,6 +65,7 @@ class User(UserMixin, db.Model):
     member_since = db.Column(db.DateTime(), default=datetime.utcnow)
     last_seen = db.Column(db.DateTime(), default=datetime.utcnow)
     posts = db.relationship('Post', backref='auther', lazy='dynamic')
+    avatar_hash = db.Column(db.String(64))
 
     def __init__(self, **kwargs):
         super(User, self).__init__(**kwargs)
@@ -73,7 +74,8 @@ class User(UserMixin, db.Model):
                 self.role = Role.query.filter_by(permission=0xff).first()
             if self.role is None:
                 self.role = Role.query.filter_by(default=True).first()
-
+        if self.email is not None and self.avatar_hash is None:
+            self.avatar_hash = hashlib.md5(self.email.encode('utf-8')).hexdigest()
 
     '''验证用户权限'''
     def can(self, permission):
@@ -156,9 +158,9 @@ class User(UserMixin, db.Model):
             url = 'https://secure.gravatar.com/avatar'
         else:
             url = 'http://www.gravatar.com'
-        hash = hashlib.md5(self.email.encode('utf-8')).hexdigest()
-        return '[url]/[hash]?s={size}&d={default}&r={ratting}'.format(url=url, hash=hash, size=size, default=default,
-                                                                      ratting=ratting)
+
+        return '{url}/{hash}?s={size}&d={default}&r={ratting}'.format(url=url, hash=self.avatar_hash, size=size,
+                                                                      default=default, ratting=ratting)
 
 
     def __repr__(self):
