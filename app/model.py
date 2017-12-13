@@ -60,20 +60,14 @@ class User(UserMixin, db.Model):
     role_id = db.Column(db.Integer, db.ForeignKey('roles.id'))
     password_hash = db.Column(db.String(128))
     confirmed = db.Column(db.Boolean, default=False)
-<<<<<<< HEAD
-    location = db.Column(db.String(64))
-    about_me = db.Column(d)
-=======
+
     location = db.Column(db.String(128))
     about_me = db.Column(db.Text())
+
     member_since = db.Column(db.DateTime(), default=datetime.utcnow)
     last_seen = db.Column(db.DateTime(), default=datetime.utcnow)
     posts = db.relationship('Post', backref='auther', lazy='dynamic')
-<<<<<<< HEAD
     avatar_hash = db.Column(db.String(64))
->>>>>>> 6f67c1b5d6bf22040126ac3af6c090a2a5336d28
-=======
->>>>>>> parent of 6f67c1b... gravatar is over
 
     def __init__(self, **kwargs):
         super(User, self).__init__(**kwargs)
@@ -169,6 +163,31 @@ class User(UserMixin, db.Model):
         return '[url]/[hash]?s={size}&d={default}&r={ratting}'.format(url=url, hash=hash, size=size, default=default,
                                                                       ratting=ratting)
 
+    '''生成虚拟用户和博客文章'''
+    @staticmethod
+    def generate_fake(count=100):
+        from sqlalchemy.exc import IntegrityError
+        from random import seed
+        import forgery_py
+
+        seed()
+        for i in range(count):
+            u = User(email=forgery_py.internet.email_address(),
+                     username=forgery_py.internet.user_name(True),
+                     password=forgery_py.lorem_ipsum.word(),
+                     confirmed=True,
+                     location=forgery_py.address.city(),
+                     name=forgery_py.name.full_name(),
+                     about_me=forgery_py.lorem_ipsum.sentence(),
+                     member_since=forgery_py.date.date(True))
+            db.session.add(u)
+            try:
+                db.session.commit()
+            except IntegrityError:
+                db.session.rollback()
+
+
+
 
     def __repr__(self):
         return 'User, %r'%self.username
@@ -191,8 +210,20 @@ class Post(db.Model):
     timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
     auther_id = db.Column(db.Integer, db.ForeignKey('users.id'))
 
-
-
+    '''生成虚拟用户文章'''
+    @staticmethod
+    def generate_fake(count=100):
+        from random import seed, randint
+        import forgery_py
+        seed()
+        user_count = User.query.count()
+        for i in range(count):
+            u = User.query.offset(randint(0, user_count-1)).first()
+            p = Post(body=forgery_py.lorem_ipsum.sentences(randint(1,3)),
+                     timestamp=forgery_py.date.date(True),
+                     auther=u)
+            db.session.add(p)
+            db.session.commit()
 
 
 @login_manager.user_loader
