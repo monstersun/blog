@@ -1,0 +1,16 @@
+<ul class="posts">
+        {% for post in posts %}
+            <li class="post">
+                <div class="profile-thumbnail"><a href="{{ url_for('main.user', username=post.auther.username) }}">
+                    <img src="{{ url_for('post.auther.gravatar(size=40)') }}" alt="" class="img-rounded img-thumbnail">
+                </a></div>
+                <div class="post-date">{{ moment(post.timestamp).fromNow() }}</div>
+                <div class="post-auther">
+                    <a href="{{ url_for('.user', username=post.auther.username) }}">
+                        {{ post.auther.username }}
+                    </a>
+                </div>
+                <div class="post-body">{{ post.body }}</div>
+            </li>
+        {% endfor %}
+    </ul>
