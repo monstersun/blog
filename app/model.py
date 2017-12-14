@@ -187,8 +187,6 @@ class User(UserMixin, db.Model):
                 db.session.rollback()
 
 
-
-
     def __repr__(self):
         return 'User, %r'%self.username
 
