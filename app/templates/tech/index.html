@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block page_content %}
+
+    <ul class="post-list">
+        {% for post in techposts %}
+           <li class="post-list-item">
+            <article>
+                <time>{{ post.timestamp }}</time>
+                <h3 class="post-title"><a href="{{ url_for('tech.show', id=post.id) }}">{{ post.title }}</a></h3>
+                <p class="post-summary">{{ post.summary }}......<a href="{{ url_for('tech.show', id=post.id) }}">
+                    阅读原文</a></p>
+            </article>
+           </li>
+        {% endfor %}
+    </ul>
+{% endblock %}

@@ -4,15 +4,16 @@ from .model import Permission
 from flask_login import current_user
 
 
-def permission_required(permission,f):
+def permission_required(permission):
     def decorator(f):
         @wraps(f)
         def decorator_function(*args, **kwargs):
             if not current_user.can(permission):
                 abort(403)
-                return f(*args, **kwargs)
+            return f(*args, **kwargs)
         return decorator_function
     return decorator
 
+
 def admin_required(f):
-    return permission_required(Permission.ADMINISTER,f)(f)
+    return permission_required(Permission.ADMINISTER)(f)

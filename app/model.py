@@ -6,6 +6,10 @@ from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 from flask import current_app, request
 from flask_moment import datetime
 import hashlib
+from markdown import markdown
+import bleach
+from sqlalchemy import event
+
 
 class Role(db.Model):
     __tablename__ = 'roles'
@@ -21,10 +25,10 @@ class Role(db.Model):
         roles = {
             'User':(Permission.FOLLOW|
                     Permission.COMMENT|
-                    Permission.WRITE_ARITICLES, True),
+                    Permission.WRITE_ARTICLES, True),
             'Moderator':(Permission.FOLLOW|
                          Permission.COMMENT|
-                         Permission.WRITE_ARITICLES|
+                         Permission.WRITE_ARTICLES|
                          Permission.MODERATE_COMMENTS, False),
             'Administrator': (0xff, False)
         }
@@ -41,15 +45,59 @@ class Role(db.Model):
     def __repr__(self):
         return 'Role, <%r>'%self.name
 
+
 '''权限'''
 class Permission:
     FOLLOW = 0x01
     COMMENT = 0X02
-    WRITE_ARITICLES = 0X04
+    WRITE_ARTICLES = 0X04
     MODERATE_COMMENTS = 0X08
     ADMINISTER = 0X80
 
 
+'''Follow附表'''
+class Follow(db.Model):
+    __tablename__ = 'follow'
+
+    follower_id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
+    followed_id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+'''文章'''
+class Post(db.Model):
+    __tablename__ = 'posts'
+    id = db.Column(db.Integer, primary_key=True)
+    body = db.Column(db.Text)
+    timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
+    auther_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    body_html = db.Column(db.Text)
+    comments = db.relationship('Comment', backref='post', lazy='dynamic')
+
+    '''生成虚拟用户文章'''
+    @staticmethod
+    def generate_fake(count=100):
+        from random import seed, randint
+        import forgery_py
+        seed()
+        user_count = User.query.count()
+        for i in range(count):
+            u = User.query.offset(randint(0, user_count-1)).first()
+            p = Post(body=forgery_py.lorem_ipsum.sentences(randint(1,3)),
+                     timestamp=forgery_py.date.date(True),
+                     auther=u)
+            db.session.add(p)
+            db.session.commit()
+
+    @staticmethod
+    def on_changeed_body(target, value, old_value, initiator):
+        allow_tags = ['a', 'abbr', 'acronym', 'b', 'blockquote', 'code', 'h1', 'h2', 'h3', 'p'
+                     ,'em', 'i', 'li', 'ul', 'ol', 'pre', 'strong']
+        target.body_html = bleach.linkify(bleach.clean(markdown(value, output_format='html'),
+                                                        tags=allow_tags, strip=True))
+
+
+'''用户'''
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
 
@@ -68,6 +116,22 @@ class User(UserMixin, db.Model):
     last_seen = db.Column(db.DateTime(), default=datetime.utcnow)
     posts = db.relationship('Post', backref='auther', lazy='dynamic')
     avatar_hash = db.Column(db.String(64))
+    lists = db.relationship('List', backref='owner', lazy='dynamic')
+
+    #follow的外键接口
+    followed = db.relationship('Follow', foreign_keys=[Follow.follower_id],
+                                backref=db.backref('follower', lazy='joined'),
+                               lazy='dynamic', cascade='all, delete-orphan')
+
+    followers = db.relationship('Follow', foreign_keys=[Follow.followed_id],
+                                backref=db.backref('followed', lazy='joined'),
+                                lazy='dynamic', cascade='all, delete-orphan')
+
+    #comment的外键接口
+    comments = db.relationship('Comment', backref='author', lazy='dynamic')
+
+    #tech的外键借口
+    techposts = db.relationship('TechPost', backref='author', lazy='dynamic')
 
     def __init__(self, **kwargs):
         super(User, self).__init__(**kwargs)
@@ -76,6 +140,7 @@ class User(UserMixin, db.Model):
                 self.role = Role.query.filter_by(permission=0xff).first()
             if self.role is None:
                 self.role = Role.query.filter_by(default=True).first()
+        self.follow(self)
 
 
     '''验证用户权限'''
@@ -186,6 +251,37 @@ class User(UserMixin, db.Model):
             except IntegrityError:
                 db.session.rollback()
 
+    '''关注者功能'''
+    def follow(self, user):
+        if not self.is_following(user):
+            f = Follow(follower = self, followed=user)
+            db.session.add(f)
+            db.session.commit()
+
+    def unfollow(self, user):
+        f = self.followed.filter_by(followed_id=user.id).first()
+        if f:
+            db.session.delete(f)
+            db.session.commit()
+
+    def is_following(self, user):
+        return self.followed.filter_by(followed_id=user.id).first() is not None
+
+    def is_followed_by(self, user):
+        return self.followers.filter_by(follower_id=user.id).first() is not None
+    @property
+    def followed_post(self):
+        return Post.query.join(Follow, Follow.followed_id==Post.auther_id)\
+            .filter(Follow.follower_id==self.id)
+
+    '''更新已有用户自己关注自己'''
+    @staticmethod
+    def add_self_follow_self():
+        for user in User.query.all():
+            if not user.is_following(user):
+                user.follow(user)
+                db.session.add(user)
+                db.session.commit()
 
     def __repr__(self):
         return 'User, %r'%self.username
@@ -197,33 +293,101 @@ class AnonymousUser(AnonymousUserMixin):
     def is_administrator(self):
         return False
 
+'''评论'''
+class Comment(db.Model):
+    __tablename__ = 'comments'
+    id = db.Column(db.Integer, primary_key=True)
+    body = db.Column(db.Text)
+    body_html = db.Column(db.Text)
+    timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
+    author_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    post_id = db.Column(db.Integer, db.ForeignKey('posts.id'))
+    disabled = db.Column(db.Boolean)
+
+    '''评论转为html'''
+    @staticmethod
+    def on_changed_body(target, value, oldvalue, initiator):
+        allow_tags = ['a', 'abbr', 'acronym', 'b', 'blockquote', 'code', 'h1', 'h2', 'h3', 'p'
+                     ,'em', 'i', 'li', 'ul', 'ol', 'pre', 'strong']
+        target.body_html = bleach.linkify(bleach.clean(markdown(value, output_format='html'),
+                                                       tags=allow_tags, strip=True))
+'''评论body监听'''
+db.event.listen(Comment.body, 'set', Comment.on_changed_body)
+
 login_manager.anonymous_user = AnonymousUser
 
 
-'''文章'''
-class Post(db.Model):
-    __tablename__ = 'Post'
-    id = db.Column(db.Integer, primary_key=True)
-    body = db.Column(db.TEXT)
-    timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
-    auther_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-
-    '''生成虚拟用户文章'''
-    @staticmethod
-    def generate_fake(count=100):
-        from random import seed, randint
-        import forgery_py
-        seed()
-        user_count = User.query.count()
-        for i in range(count):
-            u = User.query.offset(randint(0, user_count-1)).first()
-            p = Post(body=forgery_py.lorem_ipsum.sentences(randint(1,3)),
-                     timestamp=forgery_py.date.date(True),
-                     auther=u)
-            db.session.add(p)
-            db.session.commit()
-
-
+db.event.listen(Post.body, 'set', Post.on_changeed_body)
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
+
+
+'''todolist'''
+#todolist类
+class List(db.Model):
+    __tablename__ = 'lists'
+    id = db.Column(db.Integer, primary_key=True)
+    body = db.Column(db.Text)
+    body_html = db.Column(db.Text)
+    timestamp = db.Column(db.DateTime,index=True, default=datetime.utcnow)
+    compeleted = db.Column(db.Boolean)
+    owner_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    category_id = db.Column(db.Integer, db.ForeignKey('categories.id'))
+
+    @staticmethod
+    def on_changed_body(target, value, oldvalue, initiator):
+        allow_tags = ['a', 'abbr', 'acronym', 'b', 'blockquote', 'code', 'h1', 'h2', 'h3'
+            , 'em', 'i', 'li', 'ul', 'ol', 'pre', 'strong']
+        target.body_html = bleach.linkify(bleach.clean(markdown(value, output_format='html'),
+                                                       tags=allow_tags, strip=True))
+
+db.event.listen(List.body, 'set', List.on_changed_body)
+
+#事项类型
+class Category(db.Model):
+    __tablename__ = 'categories'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(64), index=True)
+    lists = db.relationship('List', backref='category', lazy='dynamic')
+
+    @staticmethod
+    def insert_category():
+        categories = ['学习', '工作', '娱乐']
+        for c in categories:
+            category = Category.query.filter_by(name=c).first()
+            if category is None:
+                category = Category(name=c)
+                db.session.add(category)
+        db.session.commit()
+
+
+'''技术文章'''
+class TechPost(db.Model):
+    __tablename__ = 'techposts'
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(64), index=True)
+    body = db.Column(db.Text)
+    body_html = db.Column(db.Text)
+    summary = db.Column(db.Text)
+    summary_html = db.Column(db.Text)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    author_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+
+    @staticmethod
+    def on_changed_body(target, value, oldvalue, initiator):
+        allow_tags = ['a', 'abbr', 'acronym', 'b', 'blockquote', 'code', 'h1', 'h2', 'h3', 'p'
+                     ,'em', 'i', 'li', 'ul', 'ol', 'pre', 'strong']
+        target.body_html = bleach.linkify(bleach.clean(markdown(value, output_format='html'),
+                                                       tags=allow_tags, strip=True))
+
+    @staticmethod
+    def on_changed_summary(target, value, oldvalue, initiator):
+        allow_tags = ['a', 'abbr', 'acronym', 'b', 'blockquote', 'code', 'h1', 'h2', 'h3', 'p'
+                     ,'em', 'i', 'li', 'ul', 'ol', 'pre', 'strong']
+        target.summary_html = bleach.linkify(bleach.clean(markdown(value, output_format='html'),
+                                                          tags=allow_tags, strip=True))
+
+
+db.event.listen(TechPost.body, 'set', TechPost.on_changed_body)
+db.event.listen(TechPost.summary, 'set', TechPost.on_changed_summary)

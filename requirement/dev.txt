@@ -1,2 +1,2 @@
 -r common.txt
-ForgeryPy==0.1
+ForgeryPy3==0.3.1

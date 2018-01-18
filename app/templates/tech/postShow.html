@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block page_content %}
+    <h2 class="post-title">{{ post.title }}</h2>
+    <p>summary:
+        {% if post.summary_html %}
+            {{ post.summary_html }}
+        {% else %}
+            {{ post.summary }}
+        {% endif %}
+    </p>
+    {% if post.body_html %}
+        {{ post.body_html }}
+    {% else %}
+        {{ post.body }}
+    {% endif %}
+{% endblock %}
