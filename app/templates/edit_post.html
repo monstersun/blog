@@ -4,7 +4,10 @@
 {% block title %}
 Flasky-Edit
 {% endblock %}
-
+{% block scripts %}
+    {{ super() }}
+    {{ pagedown.include_pagedown() }}
+{% endblock %}
 {% block content %}
     <h1>编辑文章</h1>
     <div>
@@ -12,7 +15,3 @@ Flasky-Edit
     </div>
 {% endblock %}
 
-{% block scripts %}
-    {{ super() }}
-    {{ pagedown.include_pagedown() }}
-{% endblock %}

@@ -108,3 +108,8 @@ div.flask-pagedown-preview h3 {
 div.list-form{
     margin: 0 16px 0 32px ;
 }
+.input-markdown{
+    width: 100%;
+    height:500px;
+}
+

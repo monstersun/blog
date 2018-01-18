@@ -337,8 +337,8 @@ class List(db.Model):
 
     @staticmethod
     def on_changed_body(target, value, oldvalue, initiator):
-        allow_tags = ['a', 'abbr', 'acronym', 'b', 'blockquote', 'code', 'h1', 'h2', 'h3'
-            , 'em', 'i', 'li', 'ul', 'ol', 'pre', 'strong']
+        allow_tags = ['a', 'abbr', 'acronym', 'b', 'blockquote', 'code', 'h1', 'h2', 'h3','p'
+            , 'em', 'i', 'li', 'ul', 'ol', 'pre', 'strong', 'code']
         target.body_html = bleach.linkify(bleach.clean(markdown(value, output_format='html'),
                                                        tags=allow_tags, strip=True))
 
